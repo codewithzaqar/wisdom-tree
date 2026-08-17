@@ -1,10 +1,18 @@
 import curses
 from curses import textpad
+from pygame import mixer
 import time
 import random
 
+# Initialize audio mixer
+mixer.init()
+
+# Load audio files
+rain_music = mixer.music.load('res/rain.ogg')
+tree_grow = mixer.Sound('res/growth.wav')
+mixer.music.play(-1)
+
 def replaceNth(s, source, target, n): 
-    # Replaces the nth occurrence of an item in a string
     inds = [i for i in range(len(s) - len(source)+1) if s[i:i+len(source)]==source]
     if len(inds) < n:
         return s 
@@ -14,24 +22,21 @@ def replaceNth(s, source, target, n):
 
 def addtext(x, y, text, anilen, stdscr, color_pair): 
     # Adds and animates text in the center
-    text = replaceNth(text[:int(anilen)], " ", "#", 7) # Adds "#" after the 7th word to split line
+    text = replaceNth(text[:int(anilen)], " ", "#", 8) # Adds "#" after the 7th word to split line
     text = text.split("#")                            # Splits text into a list of 1 or 2 lines
     
     for i in range(len(text)):
         stdscr.addstr(y+i, int(x-len(text[i])/2), str(text[i]), curses.color_pair(color_pair))
 
 def getrandomline(file): 
-    # Returns a random line from a file
     lines = open(file).read().splitlines()
     myline = random.choice(lines)
     return myline
 
 def getqt(): 
-    # Returns a random quote from qts.txt
     return getrandomline('qts.txt')
 
 def printart(stdscr, file, x, y, color_pair): 
-    # Prints text art line by line, centered
     with open(file, "r", encoding="utf8") as f:
         lines = f.readlines()
         for i in range(len(lines)):
@@ -43,7 +48,6 @@ class tree:
         self.age = age
 
     def display(self, maxx, maxy):
-        # Determines which tree art file to load based on age
         if self.age >= 1 and self.age < 5:
             self.artfile = 'res/p1.txt'
         elif self.age >= 5 and self.age < 10:
@@ -85,7 +89,6 @@ def main():
     curses.noecho()
     curses.cbreak()
 
-    # Define color pairs (Text Color, Background Color)
     curses.init_pair(1, 113, 0) # Passive text
     curses.init_pair(2, 85, 0)  # Quote text
     curses.init_pair(3, 3, 0)   # Age text
@@ -95,30 +98,43 @@ def main():
     seconds = 0
     anilen = 1
     anispeed = 0.2
+
+    # Music fade-in variables
+    music_volume = 0
+    music_volume_max = 1
+
     quote = getqt()
     
-    # Start the tree at age 200 so it immediately shows the final tree stage
-    tree1 = tree(stdscr, 200)
+    # Starting age changed to 118
+    tree1 = tree(stdscr, 118)
 
     try:
         while run:
             stdscr.erase()
             maxy, maxx = stdscr.getmaxyx()
 
-            # Animate quote appearance
             addtext(int(maxx/2), int(maxy*5/6), quote, anilen, stdscr, 2)
             anilen += anispeed
             if anilen > 150:
                 anilen = 150
 
-            # Every 300 seconds (5 minutes), change quote and grow tree
             if seconds % 30000 == 0: 
                 quote = getqt()
                 tree1.age += 1
                 anilen = 1
+                tree_grow.play()
+
+            # Fade in background music
+            music_volume += 0.001
+            if music_volume > music_volume_max:
+                music_volume = music_volume_max
 
             tree1.display(maxx, maxy)
-            tree1.rain(maxx, maxy, seconds, 30, 30, "`", 4)
+
+            # Rain character changed from "`" to "/"
+            tree1.rain(maxx, maxy, seconds, 30, 30, "/", 4)
+
+            mixer.music.set_volume(music_volume)
 
             stdscr.refresh()
             time.sleep(0.01)
@@ -127,7 +143,6 @@ def main():
     except KeyboardInterrupt:
         pass
     finally:
-        # Restore terminal state on exit
         curses.echo()
         curses.nocbreak()
         curses.curs_set(1)
