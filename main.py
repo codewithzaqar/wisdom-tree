@@ -1,13 +1,14 @@
+import os
+os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
+
 import curses
 from curses import textpad
 from pygame import mixer
 import time
 import random
 
-# Initialize audio mixer
 mixer.init()
 
-# Load audio files
 rain_music = mixer.music.load('res/rain.ogg')
 tree_grow = mixer.Sound('res/growth.wav')
 mixer.music.play(-1)
@@ -21,9 +22,8 @@ def replaceNth(s, source, target, n):
     return ''.join(s)
 
 def addtext(x, y, text, anilen, stdscr, color_pair): 
-    # Adds and animates text in the center
-    text = replaceNth(text[:int(anilen)], " ", "#", 8) # Adds "#" after the 7th word to split line
-    text = text.split("#")                            # Splits text into a list of 1 or 2 lines
+    text = replaceNth(text[:int(anilen)], " ", "#", 8) 
+    text = text.split("#")                            
     
     for i in range(len(text)):
         stdscr.addstr(y+i, int(x-len(text[i])/2), str(text[i]), curses.color_pair(color_pair))
@@ -41,6 +41,18 @@ def printart(stdscr, file, x, y, color_pair):
         lines = f.readlines()
         for i in range(len(lines)):
             stdscr.addstr(y+i-len(lines), x-int(len(max(lines, key=len))/2), lines[i], curses.color_pair(color_pair))
+
+def key_events(stdscr, tree1):
+    key = stdscr.getch()
+
+    if key == curses.KEY_UP:
+        tree1.age += 1
+
+    if key == curses.KEY_DOWN:
+        tree1.age -= 1
+
+    if key == ord("q"):
+        exit()
 
 class tree:
     def __init__(self, stdscr, age):
@@ -74,10 +86,13 @@ class tree:
 
     def rain(self, maxx, maxy, seconds, intensity, speed, char, color_pair):
         random.seed(int(seconds/speed))
+
         for i in range(intensity):
             ry = random.randrange(int(maxy*1/4), int(maxy*3/4))
             rx = random.randrange(int(maxx/3), int(maxx*2/3))
             self.stdscr.addstr(ry, rx, char, curses.color_pair(color_pair))
+
+        random.seed()
 
 def main():
     run = True
@@ -94,54 +109,61 @@ def main():
     curses.init_pair(3, 3, 0)   # Age text
     curses.init_pair(4, 51, 0)  # Rain character
     curses.init_pair(5, 15, 0)  # White
+    curses.init_pair(6, 1, 0)
 
     seconds = 0
     anilen = 1
     anispeed = 0.2
 
-    # Music fade-in variables
     music_volume = 0
     music_volume_max = 1
 
     quote = getqt()
     
-    # Starting age changed to 118
     tree1 = tree(stdscr, 118)
 
     try:
         while run:
-            stdscr.erase()
-            maxy, maxx = stdscr.getmaxyx()
+            try:
+                stdscr.erase()
+                maxy, maxx = stdscr.getmaxyx()
 
-            addtext(int(maxx/2), int(maxy*5/6), quote, anilen, stdscr, 2)
-            anilen += anispeed
-            if anilen > 150:
-                anilen = 150
+                addtext(int(maxx/2), int(maxy*5/6), quote, anilen, stdscr, 2)
+                anilen += anispeed
+                if anilen > 150:
+                    anilen = 150
 
-            if seconds % 30000 == 0: 
-                quote = getqt()
-                tree1.age += 1
-                anilen = 1
-                tree_grow.play()
+                # Changed to 3000 (30 seconds) for faster growth
+                if seconds % 3000 == 0: 
+                    quote = getqt()
+                    tree1.age += 1
+                    anilen = 1
+                    tree_grow.play()
 
-            # Fade in background music
-            music_volume += 0.001
-            if music_volume > music_volume_max:
-                music_volume = music_volume_max
+                music_volume += 0.001
+                if music_volume > music_volume_max:
+                    music_volume = music_volume_max
 
-            tree1.display(maxx, maxy)
+                tree1.display(maxx, maxy)
+                tree1.rain(maxx, maxy, seconds, 30, 30, "/", 4)
 
-            # Rain character changed from "`" to "/"
-            tree1.rain(maxx, maxy, seconds, 30, 30, "/", 4)
+                mixer.music.set_volume(music_volume)
+                key_events(stdscr, tree1)
 
-            mixer.music.set_volume(music_volume)
+                time.sleep(0.01)
+                seconds += 1
+
+            except KeyboardInterrupt:
+                try:
+                    stdscr.erase()
+                    stdscr.addstr(int(maxy*3/5), int(maxx/2-len("PRESS 'q' TO EXIT")/2), "PRESS 'q' TO EXIT", curses.A_BOLD)
+                    stdscr.refresh()
+                    time.sleep(1)
+                except KeyboardInterrupt:
+                    pass
 
             stdscr.refresh()
-            time.sleep(0.01)
-            seconds += 1
             
-    except KeyboardInterrupt:
-        pass
     finally:
         curses.echo()
         curses.nocbreak()
