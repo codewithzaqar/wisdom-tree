@@ -10,10 +10,6 @@ import pickle
 
 mixer.init()
 
-rain_music = mixer.music.load('res/rain.ogg')
-tree_grow = mixer.Sound('res/growth.wav')
-mixer.music.play(-1)
-
 def replaceNth(s, source, target, n): 
     inds = [i for i in range(len(s) - len(source)+1) if s[i:i+len(source)]==source]
     if len(inds) < n:
@@ -53,16 +49,37 @@ def key_events(stdscr, tree1):
         tree1.age -= 1
 
     if key == ord("q"):
-        # Save tree age to file before exiting
         treedata = open('res/treedata', 'wb')
         pickle.dump(tree1.age, treedata, protocol=None)
         treedata.close()
         exit()
 
+    if key == curses.KEY_RIGHT:
+        tree1.music_list_num += 1
+        if tree1.music_list_num > len(tree1.music_list)-1:
+            tree1.music_list_num = len(tree1.music_list)-1
+        music = mixer.music.load(tree1.music_list[tree1.music_list_num])
+        mixer.music.play(-1)
+        tree1.show_music = True
+
+    if key == curses.KEY_LEFT:
+        tree1.music_list_num -= 1
+        if tree1.music_list_num < 0:
+            tree1.music_list_num = 0
+        music = mixer.music.load(tree1.music_list[tree1.music_list_num])
+        mixer.music.play(-1)
+        tree1.show_music = True
+
+
 class tree:
     def __init__(self, stdscr, age):
         self.stdscr = stdscr
         self.age = age
+        self.show_music = False
+        self.music_list = ['res/rain.ogg','res/forest.ogg','res/forest2.ogg']
+        self.music_list_num = 0
+        self.music = mixer.music.load(self.music_list[self.music_list_num])
+
 
     def display(self, maxx, maxy):
         if self.age >= 1 and self.age < 5:
@@ -116,7 +133,9 @@ def main():
     curses.init_pair(5, 15, 0)  # White
     curses.init_pair(6, 1, 0)
 
-    seconds = 0
+    tree_grow = mixer.Sound('res/growth.wav')
+
+    seconds = 1
     anilen = 1
     anispeed = 0.2
 
@@ -124,16 +143,18 @@ def main():
     music_volume_max = 1
 
     quote = getqt()
+    tree_grow.play()
     
-    # Initialize tree and attempt to load saved age
     tree1 = tree(stdscr, 1)
-    tree1.age -= 1
+    mixer.music.play(-1)
+
     try:
         treedata_in = open('res/treedata', 'rb')
         tree1.age = pickle.load(treedata_in)
         treedata_in.close()
     except FileNotFoundError:
         pass
+
 
     try:
         while run:
@@ -151,6 +172,13 @@ def main():
                     tree1.age += 1
                     anilen = 1
                     tree_grow.play()
+
+                if seconds % 200 == 0:
+                    tree1.show_music = False
+
+                if tree1.show_music:
+                    showtext = "Playing:" + tree1.music_list[tree1.music_list_num].split("/")[1]
+                    stdscr.addstr(int(maxy/10), int(maxx/2-len(showtext)/2), showtext, curses.A_BOLD)
 
                 music_volume += 0.001
                 if music_volume > music_volume_max:
