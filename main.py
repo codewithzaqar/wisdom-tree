@@ -11,7 +11,7 @@ import glob
 
 mixer.init()
 
-def replaceNth(s, source, target, n): 
+def replaceNth(s, source, target, n): #code from stack overflow, replaces nth occurence of an item.
     inds = [i for i in range(len(s) - len(source)+1) if s[i:i+len(source)]==source]
     if len(inds) < n:
         return s 
@@ -51,7 +51,7 @@ def key_events(stdscr, tree1):
 
     if key == ord("q"):
         treedata = open('res/treedata', 'wb')
-        pickle.dump(tree1.age, treedata, protocol=None)
+        pickle.dump(tree1.age, treedata, protocol=None )
         treedata.close()
         exit()
 
@@ -81,14 +81,14 @@ class tree:
         self.stdscr = stdscr
         self.age = age
         self.show_music = False
-
+        
         # Automatically loads all .ogg files from the res folder
         self.music_list = glob.glob("res/*.ogg")
         self.music_list_num = 0
-
+        
         if self.music_list:
             self.music = mixer.music.load(self.music_list[self.music_list_num])
-
+            
         self.pause = False
 
 
@@ -112,13 +112,13 @@ class tree:
         elif self.age >= 200:
             self.artfile = 'res/p9.txt'
         else:
-            self.artfile = 'res/p1.txt' # Fallback
+            self.artfile = 'res/p1.txt'
 
         printart(self.stdscr, self.artfile, int(maxx/2), int(maxy*3/4), 1)
         addtext(int(maxx/2), int(maxy*3/4), "age: " + str(int(self.age)) + " ", -1, self.stdscr, 3)
 
     def rain(self, maxx, maxy, seconds, intensity, speed, char, color_pair):
-        random.seed(int(seconds/speed))
+        random.seed(int(seconds/speed)) # this keeps the seed same for some time, so rains looks like its going slowly
 
         for i in range(intensity):
             ry = random.randrange(int(maxy*1/4), int(maxy*3/4))
@@ -137,25 +137,25 @@ def main():
     curses.noecho()
     curses.cbreak()
 
-    curses.init_pair(1, 113, 0) # Passive text
-    curses.init_pair(2, 85, 0)  # Quote text
-    curses.init_pair(3, 3, 0)   # Age text
-    curses.init_pair(4, 51, 0)  # Rain character
-    curses.init_pair(5, 15, 0)  # White
-    curses.init_pair(6, 1, 0)
+    curses.init_pair(1, 113, 0) 
+    curses.init_pair(2, 85, 0)  
+    curses.init_pair(3, 3, 0)   
+    curses.init_pair(4, 51, 0)  
+    curses.init_pair(5, 15, 0)  
+    curses.init_pair(6, 1, 0)  
 
     tree_grow = mixer.Sound('res/growth.wav')
 
     seconds = 1
     anilen = 1
     anispeed = 0.2
-
+    
     music_volume = 0
     music_volume_max = 1
 
     quote = getqt()
     tree_grow.play()
-    
+
     tree1 = tree(stdscr, 1)
     mixer.music.play(-1)
 
@@ -184,19 +184,20 @@ def main():
                     anilen = 1
                     tree_grow.play()
 
-                if seconds % 200 == 0:
+                if seconds % 200 == 0: # Hide music display after ~2 seconds
                     tree1.show_music = False
 
                 if tree1.show_music:
-                    showtext = "Playing:" + tree1.music_list[tree1.music_list_num].split("/")[1]
+                    filename = os.path.basename(tree1.music_list[tree1.music_list_num])
+                    showtext = "Playing: " + filename
                     stdscr.addstr(int(maxy/10), int(maxx/2-len(showtext)/2), showtext, curses.A_BOLD)
 
-                music_volume += 0.001
+                music_volume += 0.001 #fade in music
                 if music_volume > music_volume_max:
                     music_volume = music_volume_max
 
                 tree1.display(maxx, maxy)
-                tree1.rain(maxx, maxy, seconds, 30, 30, "/", 4)
+                tree1.rain(maxx, maxy, seconds, 30, 30, "/",  4)
 
                 mixer.music.set_volume(music_volume)
                 key_events(stdscr, tree1)
@@ -215,7 +216,7 @@ def main():
 
                 time.sleep(0.01)
                 seconds += 1
-
+                
             except KeyboardInterrupt:
                 try:
                     stdscr.erase()
@@ -226,7 +227,7 @@ def main():
                     pass
 
             stdscr.refresh()
-            
+
     finally:
         curses.echo()
         curses.nocbreak()
@@ -235,5 +236,5 @@ def main():
         stdscr.nodelay(False)
         curses.endwin()
 
-if __name__ == "__main__":  
+if __name__ == "__main__":
     main()
