@@ -6,6 +6,7 @@ from curses import textpad
 from pygame import mixer
 import time
 import random
+import pickle
 
 mixer.init()
 
@@ -52,6 +53,10 @@ def key_events(stdscr, tree1):
         tree1.age -= 1
 
     if key == ord("q"):
+        # Save tree age to file before exiting
+        treedata = open('res/treedata', 'wb')
+        pickle.dump(tree1.age, treedata, protocol=None)
+        treedata.close()
         exit()
 
 class tree:
@@ -120,7 +125,15 @@ def main():
 
     quote = getqt()
     
-    tree1 = tree(stdscr, 118)
+    # Initialize tree and attempt to load saved age
+    tree1 = tree(stdscr, 1)
+    tree1.age -= 1
+    try:
+        treedata_in = open('res/treedata', 'rb')
+        tree1.age = pickle.load(treedata_in)
+        treedata_in.close()
+    except FileNotFoundError:
+        pass
 
     try:
         while run:
@@ -133,7 +146,6 @@ def main():
                 if anilen > 150:
                     anilen = 150
 
-                # Changed to 3000 (30 seconds) for faster growth
                 if seconds % 3000 == 0: 
                     quote = getqt()
                     tree1.age += 1
@@ -172,5 +184,5 @@ def main():
         stdscr.nodelay(False)
         curses.endwin()
 
-if __name__ == "__main__":
+if __name__ == "__main__":  
     main()
