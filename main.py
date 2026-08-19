@@ -131,7 +131,7 @@ class tree:
             self.artfile = 'res/p5.txt'
         elif self.age >= 40 and self.age < 60:
             self.artfile = 'res/p6.txt'
-        elif self.age >= 70 and self.age < 120:
+        elif self.age >= 60 and self.age < 120:
             self.artfile = 'res/p7.txt'
         elif self.age >= 120 and self.age < 200:
             self.artfile = 'res/p8.txt'
