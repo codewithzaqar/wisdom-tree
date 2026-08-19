@@ -47,13 +47,15 @@ def key_events(stdscr, tree1):
 
     if key == curses.KEY_UP:
         tree1.showtimer = True
-        tree1.selectedtimer += 1
+        tree1.selectedtimer -= 1
+        tree1.timerhidetime = int(time.time())+5
 
     if key == curses.KEY_DOWN:
         tree1.showtimer = True
-        tree1.selectedtimer -= 1
+        tree1.selectedtimer += 1
+        tree1.timerhidetime = int(time.time())+5
 
-    if key == curses.KEY_ENTER or key == 10 or key == 13:
+    if key == curses.KEY_ENTER or key == 10 or key == 13: # this is enter key
         if tree1.showtimer:
             tree1.starttimer(tree1.selectedtimer)
             tree1.timerstart.play()
@@ -71,6 +73,7 @@ def key_events(stdscr, tree1):
         music = mixer.music.load(tree1.music_list[tree1.music_list_num])
         mixer.music.play(-1)
         tree1.show_music = True
+        tree1.musichidetime = int(time.time())+5
 
     if key == curses.KEY_LEFT:
         tree1.music_list_num -= 1
@@ -79,6 +82,7 @@ def key_events(stdscr, tree1):
         music = mixer.music.load(tree1.music_list[tree1.music_list_num])
         mixer.music.play(-1)
         tree1.show_music = True
+        tree1.musichidetime = int(time.time())+5
 
     if key == ord(" "):
         mixer.music.pause()
@@ -99,20 +103,23 @@ class tree:
             
         self.pause = False
         self.showtimer = False
-        self.timerlist = ["Pomodro 20+20", "Pomodro 20+10", "Pomodro 40+20", "Pomodro 50+10"]
+        self.timerlist = ["Pomodro 20+20" ,"Pomodro 20+10", "Pomodro 40+20", "Pomodro 50+10"]
         self.selectedtimer = 0
-
+        
         try:
             self.timerstart = mixer.Sound('res/timerstart.wav')
         except:
-            self.timerstart = mixer.Sound('res/growth.wav')
-
+            self.timerstart = mixer.Sound('res/growth.wav') # Fallback
+            
         try:
             self.alarm = mixer.Sound('res/alarm.wav')
         except:
-            self.alarm = mixer.Sound('res/growth.wav')
-
-        self.timerrun = False
+            self.alarm = mixer.Sound('res/growth.wav') # Fallback
+            
+        self.istimer = False
+        self.timerhidetime = 0
+        self.musichidetime = 0
+        
         random.seed(str(date.today()))
         self.season = random.choice(["rain", "heavy_rain", "light_rain", "snow", "windy"])
         random.seed()
@@ -141,11 +148,9 @@ class tree:
             self.artfile = 'res/p1.txt'
 
         printart(self.stdscr, self.artfile, int(maxx/2), int(maxy*3/4), 1)
-        addtext(int(maxx/2), int(maxy*3/4), "age: " + str(int(self.age)) + " ", -1, self.stdscr, 3)
+        addtext(int(maxx/2), int(maxy*3/4),"age: " +str(int(self.age))+ " " , -1, self.stdscr, 3)
 
-        if self.timerrun:
-            pass
-        # RAIN
+        #RAIN
 
     def rain(self, maxx, maxy, seconds, intensity, speed, char, color_pair):
         random.seed(int(seconds/speed)) # this keeps the seed same for some time, so rains looks like its going slowly
@@ -159,36 +164,48 @@ class tree:
 
     def seasons(self, maxx, maxy, seconds):
         if self.season == "rain":
-            self.rain(maxx, maxy, seconds, 30, 30, "/", 4)
+            self.rain(maxx, maxy, seconds, 30, 30, "/",  4)
 
         if self.season == "light_rain":
-            self.rain(maxx, maxy, seconds, 30, 60, "`", 4)
+            self.rain(maxx, maxy, seconds, 30, 60, "`",  4)
 
         if self.season == "heavy_rain":
-            self.rain(maxx, maxy, seconds, 40, 20, "/", 4)
+            self.rain(maxx, maxy, seconds, 40, 20, "/",  4)
 
         if self.season == "snow":
-            self.rain(maxx, maxy, seconds, 30, 30, ".", 5)
+            self.rain(maxx, maxy, seconds, 30, 30, ".",  5)
 
         if self.season == "windy":
-            self.rain(maxx, maxy, seconds, 20, 30, "-", 4)
+            self.rain(maxx, maxy, seconds, 20, 30, "-",  4)
 
-    def timer(self, stdscr, maxy, maxx):
-        if self.selectedtimer > len(self.timerlist) - 1:
-            self.selectedtimer = len(self.timerlist) - 1
-        if self.selectedtimer < 0:
-            self.selectedtimer = 0
+    def timerdisplay(self, stdscr, maxy, maxx):
+        if self.showtimer:
 
-        for i in range(len(self.timerlist)):
-            if i == self.selectedtimer:
-                stdscr.addstr(int((maxy-len(self.timerlist))/2)+i*2, int(maxx/10-len(self.timerlist[i])/2), self.timerlist[i], curses.A_BOLD)
-            else:
-                stdscr.addstr(int((maxy-len(self.timerlist))/2)+i*2, int(maxx/10-len(self.timerlist[i])/2), self.timerlist[i])
+            if self.selectedtimer > len(self.timerlist) - 1:
+                self.selectedtimer = len(self.timerlist) - 1
+            if self.selectedtimer < 0:
+                self.selectedtimer = 0
+
+            for i in range(len(self.timerlist)):
+                if i == self.selectedtimer:
+                    stdscr.addstr(int((maxy-len(self.timerlist))/2)+i*2, int(maxx/10-len(self.timerlist[i])/2), self.timerlist[i], curses.A_BOLD)
+                else:
+                    stdscr.addstr(int((maxy-len(self.timerlist))/2)+i*2, int(maxx/10-len(self.timerlist[i])/2), self.timerlist[i])
+
+        if int(time.time()) == self.timerhidetime:
+            self.showtimer=False
+
+    def timer(self):
+        if self.istimer and int(time.time())==self.workendtime:
+            exit()
+
 
     def starttimer(self, input):
-        self.timerrun = True
-        self.worktime = 120000
-        self.breaktime = 120000
+        self.istimer = True
+        self.worktime = 5
+        self.breaktime = 10
+
+        self.workendtime = int(time.time())+self.worktime
 
 
 def main():
@@ -206,7 +223,7 @@ def main():
     curses.init_pair(3, 3, 0)   
     curses.init_pair(4, 51, 0)  
     curses.init_pair(5, 15, 0)  
-    curses.init_pair(6, 1, 0)
+    curses.init_pair(6, 1, 0)  
     curses.init_pair(7, curses.COLOR_YELLOW, 0)
 
     tree_grow = mixer.Sound('res/growth.wav')
@@ -249,10 +266,7 @@ def main():
                     anilen = 1
                     tree_grow.play()
 
-                if seconds % 500 == 0:
-                    tree1.showtimer = False
-
-                if seconds % 200 == 0: # Hide music display after ~2 seconds
+                if tree1.musichidetime == int(time.time()):
                     tree1.show_music = False
 
                 if tree1.show_music:
@@ -260,17 +274,20 @@ def main():
                     showtext = "Playing: " + filename
                     stdscr.addstr(int(maxy/10), int(maxx/2-len(showtext)/2), showtext, curses.A_BOLD)
 
-                if tree1.showtimer:
-                    tree1.timer(stdscr, maxy, maxx)
-
-                music_volume += 0.001 #fade in music
+                music_volume+=0.001#fade in music
                 if music_volume > music_volume_max:
                     music_volume = music_volume_max
 
                 tree1.display(maxx, maxy, seconds)
+
                 tree1.seasons(maxx, maxy, seconds)
 
+                tree1.timerdisplay(stdscr, maxy, maxx)
+
+                tree1.timer()
+
                 mixer.music.set_volume(music_volume)
+
                 key_events(stdscr, tree1)
 
                 # Pause loop
