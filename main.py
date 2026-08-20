@@ -1,6 +1,5 @@
 import os
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
-
 import curses
 from curses import textpad
 from pygame import mixer
@@ -318,7 +317,7 @@ def main():
                 if anilen > 150:
                     anilen = 150
 
-                if int(time.time())%(30*60) == 0: 
+                if seconds%(100*60*10) == 0: 
                     quote = getqt()
                     tree1.age += 1
                     anilen = 1
