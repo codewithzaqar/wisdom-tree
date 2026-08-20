@@ -26,7 +26,7 @@ def addtext(x, y, text, anilen, stdscr, color_pair):
         stdscr.addstr(y+i, int(x-len(text[i])/2), str(text[i]), curses.color_pair(color_pair))
 
 def getrandomline(file): 
-    lines = open(file).read().splitlines()
+    lines = open(file, encoding="utf8").read().splitlines()
     myline = random.choice(lines)
     return myline
 
