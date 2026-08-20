@@ -319,7 +319,7 @@ def main():
                 if anilen > 150:
                     anilen = 150
 
-                if seconds % 3000 == 0: 
+                if int(time.time())%(30*60) == 0: 
                     quote = getqt()
                     tree1.age += 1
                     anilen = 1
