@@ -207,7 +207,7 @@ class tree:
 
 
         if self.breakover:
-            self.stdscr.addstr(int(maxy*10/11), int(maxx/2-len("BREAK IS OVER, PRESS ENTER TO START NEW TIMER")/2), "BREAK IS OVER, PRESS ENTER TO START NEW TIMER", curses.A_BLINK)
+            self.stdscr.addstr(int(maxy*10/11), int(maxx/2-len("BREAK IS OVER, PRESS ENTER TO START NEW TIMER")/2), "BREAK IS OVER, PRESS ENTER TO START NEW TIMER", curses.A_BLINK | curses.A_BOLD)
 
     def breakstart(self):
         if self.istimer:
@@ -275,13 +275,16 @@ def main():
     curses.noecho()
     curses.cbreak()
 
-    curses.init_pair(1, 113, 0) 
-    curses.init_pair(2, 85, 0)  
-    curses.init_pair(3, 3, 0)   
-    curses.init_pair(4, 51, 0)  
-    curses.init_pair(5, 15, 0)  
-    curses.init_pair(6, 1, 0)  
-    curses.init_pair(7, curses.COLOR_YELLOW, 0)
+    curses.use_default_colors()
+
+
+    curses.init_pair(1, 113, -1) 
+    curses.init_pair(2, 85, -1)  
+    curses.init_pair(3, 3, -1)   
+    curses.init_pair(4, 51, -1)  
+    curses.init_pair(5, 15, -1)  
+    curses.init_pair(6, 1, -1)  
+    curses.init_pair(7, curses.COLOR_YELLOW, -1)
 
     tree_grow = mixer.Sound('res/growth.wav')
 
