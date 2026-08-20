@@ -302,7 +302,6 @@ def main():
     try:
         treedata_in = open('res/treedata', 'rb')
         tree1.age = pickle.load(treedata_in)
-        tree1.age = 1
 
     except FileNotFoundError:
         pass
