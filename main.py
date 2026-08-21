@@ -91,6 +91,13 @@ def key_events(stdscr, tree1):
         tree1.pause = True
         tree1.pausetime = time.time()
 
+    if key == ord("m"):
+
+        if mixer.music.get_busy():
+            mixer.music.pause()
+        else:
+            mixer.music.unpause()
+
 
 class tree:
     def __init__(self, stdscr, age):
