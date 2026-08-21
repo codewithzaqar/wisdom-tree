@@ -106,7 +106,7 @@ class tree:
             
         self.pause = False
         self.showtimer = False
-        self.timerlist = ["Pomodro 20+20" ,"Pomodro 20+10", "Pomodro 40+20", "Pomodro 50+10"]
+        self.timerlist = [" Pomodro 20+20 ", " Pomodro 20+10 ", " Pomodro 40+20 ", " Pomodro 50+10 ", " END TIMER NOW "]
         self.selectedtimer = 0
         
         try:
